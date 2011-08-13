@@ -1,27 +1,23 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class Vaquerita(User):
+    '''Model for all logged-in users of the bugtracker -- uses Django's built-in user model'''
+    is_maintainer = models.BooleanField(default=False)
+
 class Issue(models.Model):
     '''Model for all bugs and feature requests that the tracker tracks'''
     title = models.CharField(max_length=200)
-    author = models.ForeignKey(Vaquerita, blank=True, null=True, on_delete=models.SET_NULL)
-    # the importance level of the bug
-    priority = models.PositiveIntegerField(choices=priority_choices)
-    # how far the bug is along towards being closed
-    status = models.CharField(max_length=3, choices=status_choices,default='unr')
-    tags = models.ManytoManyField(Tag, blank=True, null=True)
-    milestone = models.ForeignKey(Milestone, blank=True, null=True)
-    # for keeping track of dependencies and other relationships between issues -- the exact relation is left to be hashed out in the comments
-    also_see = models.ManytoManyField("self", blank=True, null=True)
-    
+    author = models.ForeignKey('Vaquerita', blank=True, null=True, on_delete=models.SET_NULL)
     priority_choices = (
         (1, 'critical'),
         (2, 'urgent'),
         (3, 'bug'),
         (4, 'feature'),
         (5, 'wish'),
-    )
-    
+        )
+    # the importance level of the bug
+    priority = models.PositiveIntegerField(choices=priority_choices)
     status_choices = (
         ('unr', 'unread'),
         ('ch', 'chatting'),
@@ -32,34 +28,36 @@ class Issue(models.Model):
         ('def', 'deferred'),
         ('ro', 'reopened'),
     )
+    # how far the bug is along towards being closed
+    status = models.CharField(max_length=3, choices=status_choices,default='unr')
+    tags = models.ManyToManyField('Tag', blank=True, null=True)
+    milestone = models.ForeignKey('Milestone', blank=True, null=True)
+    # for keeping track of dependencies and other relationships between issues -- the exact relation is left to be hashed out in the comments
+    also_see = models.ManyToManyField("self", blank=True, null=True)
     
     def __unicode__(self):
         return "Issue" + self.pk
     
-class Vaquerita(User):
-    '''Model for all logged-in users of the bugtracker -- uses Django's built-in user model'''
-    is_maintainer = models.BooleanField(default=False)
 
 class HistoryItem(models.Model):
     '''Base model for comments and file uploads, and a model in itself for things like issue status changes, priority changes, and other sorts of changes'''
     issue = models.ForeignKey(Issue)
     author = models.ForeignKey(Vaquerita, blank=True, null=True, on_delete=models.SET_NULL)
     timestamp = models.DateTimeField(auto_now_add=True)
-    change_type = models.CharField(max_length=8,choices=history_choices)
-    change_description = models.CharField(max_length=200, blank=True, null=True)
-    
     history_choices = (
         ('comment','comment'),
         ('upload', 'file upload'),
         ('other', 'other change'),
     )
+    change_type = models.CharField(max_length=8,choices=history_choices)
+    change_description = models.CharField(max_length=200, blank=True, null=True)
     
     def __unicode__(self):
         return 'history item ' + self.pk + ': ' + change_description
         
 class FileUpload(HistoryItem):
     '''Subclass of history item for an uploaded file for an issue. Must have one and only one associated issue'''
-    file = models.FileField(upload_to=upload_directory, blank=True, null=True)
+    file = models.FileField(upload_to='upload_directory', blank=True, null=True)
     name = models.CharField(max_length=100)
     
 class Comment(HistoryItem):

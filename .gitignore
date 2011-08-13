@@ -1,3 +1,4 @@
 *~
 *.pyc
 /mysite/userena/*
+*.db
