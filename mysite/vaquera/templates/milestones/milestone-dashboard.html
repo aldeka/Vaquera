@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block page_title %}Milestones{% endblock page_title %}
+
+{% block content %}
+    <div class="multi-column {% if overdue_milestone_list %}four-column{% else %}three-column{% endif %}">
+    
+    {% if overdue_milestone_list %}
+        <div class="column">
+        <ul>
+            {% for milestone in overdue_milestone_list %}
+            <li class="milestone milestone-{{ milestone.pk }}"><span class="milestone-name">{{ milestone.name }}</span>
+                <ul>
+                    {% for issue in milestone.issue_set %}
+                    {% if not (issue.status == 'res' or issue.status == 'def') %}
+                        <li class="issue issue-{{ issue.pk }}"><span class="title">Issue {{ issue.pk }}: {{ issue.title }}</span></li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endfor %}
+        </ul>
+        </div>
+    {% endif %}
+                                                
+        <div class="column current-milestone milestone-{{ milestone.pk }}">
+        <ul>
+            {% for issue in current_milestone.issue_set %}
+            <li><span class="title">Issue {{ issue.pk }}: {{ issue.title }}</span></li>
+            {% endfor %}
+        </ul>
+        </div>
+        
+        <div class="column future-milestones">
+        <ul>
+        {% for milestone in future_milestone_list %}
+            <li class="milestone milestone-{{ milestone.pk }}">span class="milestone-name">{{ milestone.name }}</span></li>
+        {% endfor %}
+        </ul>
+        </div>
+        
+        <div class="column issue-bin">
+        <ul>
+        {% for issue in unaffiliated_issues %}
+            <li class="issue issue-{{ issue.pk }}"><span class="title">Issue {{ issue.pk }}: {{ issue.title }}</span></li>
+        {% endfor %}
+        </ul>
+        </div>
+        
+    </div>
+{% endblock content %}

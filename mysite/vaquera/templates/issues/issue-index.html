@@ -1,0 +1,24 @@
+{% extends "base-index.html" %}
+
+{% block page_title %}All issues{% endblock page_title %}
+
+{% block content %}
+    <div class="single-column">
+    <div id="list-filters">
+        <input id="search" type="text"></input>
+        <div class="button all-unassigned">All unassigned</div>
+        <div class="button all-unread">All unread</div>
+        <div class="button all-needs-review">All needing review</div>
+        <div class="button all-overdue">All overdue</div>
+    </div>
+    
+    <ul id="issue-list">
+    {% for issue in issue_list %}
+        <li class="issue {% if issue.milestone.is_current() %}current{% endif %}{% if issue.milestone.is_past() %}overdue{% endif %}{% if issue.assignee == null %}unassigned{% endif %}{% if issue.status == 'unr' %}unread{% endif %}{% if issue.status == 'rev' %}needs-review{% endif %}">
+            <span class="decorator {% if issue.milestone.is_current() %}current{% endif %}{% if issue.milestone.is_past() %}overdue{% endif %}">&nbsp;</span>
+            <span class="title">Issue {{ issue.pk }}: {{ issue.title }}</span>
+        </li>
+    {% endfor %}
+    </ul>
+    </div>
+{% endblock content %}

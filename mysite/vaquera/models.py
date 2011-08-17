@@ -1,5 +1,19 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.forms import ModelForm, Text
+import datetime
+
+class Project(models.Model):
+    '''Model for the entirety of the project'''
+    name = models.CharField(max_length=200)
+    #milestone_length_choices = (
+        #(7, 'one week'),
+        #(14, 'two weeks'),
+        #(30, 'one month'),
+        #(90, 'three months'),
+    #)
+    ## note: the numbers are only an approximation of the actual length -- still needs processing!
+    #default_milestone_length = models.PositiveIntegerField(choices=milestone_length_choices, default=30)
 
 class Vaquerita(User):
     '''Model for all logged-in users of the bugtracker -- uses Django's built-in user model'''
@@ -9,6 +23,7 @@ class Issue(models.Model):
     '''Model for all bugs and feature requests that the tracker tracks'''
     title = models.CharField(max_length=200)
     author = models.ForeignKey('Vaquerita', blank=True, null=True, on_delete=models.SET_NULL)
+    project = models.ForeignKey(Project)
     priority_choices = (
         (1, 'critical'),
         (2, 'urgent'),
@@ -30,13 +45,25 @@ class Issue(models.Model):
     )
     # how far the bug is along towards being closed
     status = models.CharField(max_length=3, choices=status_choices,default='unr')
+    assignee = models.ForeignKey('Vaquerita', blank=True, null=True)
     tags = models.ManyToManyField('Tag', blank=True, null=True)
+    followers = models.ManyToManyField('Vaquerita',blank=True,null=True)
     milestone = models.ForeignKey('Milestone', blank=True, null=True)
     # for keeping track of dependencies and other relationships between issues -- the exact relation is left to be hashed out in the comments
     also_see = models.ManyToManyField("self", blank=True, null=True)
     
     def __unicode__(self):
         return "Issue" + self.pk
+        
+class IssueForm(ModelForm):
+    class Meta:
+        model = Issue
+        fields = ('title', 'priority', 'status', 'assignee', 'milestone', 'tags', 'followers', 'also_see',)
+        widgets = {
+            'followers': Text,
+            'tags': Text,
+            'also_see': Text,
+        }
     
 
 class HistoryItem(models.Model):
@@ -88,8 +115,76 @@ class Tag(models.Model):
 class Milestone(models.Model):
     '''Model for milestones -- a group of bugs with a due date, e.g. a sprint or a release'''
     name = models.CharField(max_length=100)
-    start_date = models.DateField(auto_now_add=True)
-    end_date = models.DateField(blank=True,null=True)
+    description = models.TextField(null=True,blank=True)
+    end_date = models.DateField()
+    project = models.ForeignKey(Project)
+    
+    @staticmethod
+    def safe_for_democracy(project):
+        # what's today's date?
+        today = datetime.date.today()
+        # what's the newest date that ought to have a milestone?
+        latest_milestone_date = generate_enddate(today,3)
+        
+        # check that we're up to date on past milestones
+        latest = Milestone.objects.all().order_by('-end_date')[0]
+        while latest.end_date < latest_milestone_date:
+            # as long as we aren't up-to-date, make a milestone for one month ahead
+            new_end_date = generate_enddate(latest.end_date, 1)
+            m = Milestone(end_date=new_end_date, name=default_name(new_end_date), project=project)
+            m.save()
+            # then mark the milestone we just created as the latest milestone
+            latest = m
+        
+    @staticmethod
+    def generate_enddate(date,n):
+        '''adds n months to a given date, and returns the last day of the resulting month'''
+        if (date.month + n) / 12 >= 1:
+            new_month = (date.month + n) % 12
+            new_year = date.year + ((date.month + n) // 12)
+            new_date = datetime.date(new_year, new_month, date.day)
+            return end_of_month(new_date)
+        else:
+            new_date = datetime.date(date.year, date.month + n, date.day)
+            return end_of_month(new_date)
+            
+    @staticmethod
+    def is_end_of_month(date):
+        # get the date for the next day
+        new_date = date + datetime.timedelta(days=1)
+        # if the month value is different, it's the end of the month
+        return date.month != new_date.month
+        
+    @staticmethod
+    def end_of_month(date):
+        max_tries = 32
+        a_day = datetime.timedelta(days=1)
+        while max_tries > 0:
+            if is_end_of_month(date):
+                return date
+            else:
+                date = date + a_day
+                max_tries = max_tries - 1
+        return "Oh crap. Something has gone wrong."
+        
+    @staticmethod
+    def default_name(date):
+        '''Returns a default name for a milestone, based on the month and the year'''
+        return str(date.month) + '.' + str(date.year)
+        
+    def is_current(self):
+        '''Returns true if this milestone is the current milestone'''
+        today = datetime.date.today()
+        return today.month == self.end_date.month
+        
+    def is_past(self):
+        '''Returns true if the milestone's end date has passed'''
+        today = datetime.date.today()
+        return today > self.end_date
+    
+    def is_empty(self):
+        '''Determines if this milestone doesn't have any issues in it'''
+        return self.issue_set.count() == 0
     
     def completion_level(self):
         '''Calculates how complete a milestone is to having all its bugs closed (either resolved or deferred)'''
@@ -103,6 +198,6 @@ class Milestone(models.Model):
         return percent_complete
         
     def is_complete(self):
-        '''Returns a boolean that is True if the milestone's completion level is 100 percent'''
-        return self.completion_level == 100.0
+        '''Returns a boolean that is True if the milestone's completion level is 100 percent and the milestone isn't empty'''
+        return self.completion_level == 100.0 and not (self.is_empty and self.is_past)
             

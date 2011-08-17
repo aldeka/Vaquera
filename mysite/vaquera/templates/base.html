@@ -1,0 +1,59 @@
+<!DOCTYPE html> 
+<html>
+<head>
+<title>Vaquera</title>
+{% block stylesheets %}
+{% endblock stylesheets %}
+
+{% block scripts %}
+{% endblock scripts %}
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="header">
+    <h1>{{ project.name }}'s issue tracker</h1>
+    </div>
+    
+    <div id="nav">
+    <ul>
+        <li>Issues
+            <ul>
+            <li>See all</li>
+            <li>Add new</li>
+            </ul>
+        </li>
+        <li>Milestones
+            <ul>
+            <li>Current milestone</li>
+            <li>Edit milestones</li>
+            </ul>
+        </li>
+        <li>People
+        </li>
+        <li>My stuff
+            <ul>
+            <li>Issues I own</li>
+            <li>Issues I wrote</li>
+            <li>Issues I follow</li>
+            <li>Edit account info</li>
+            </ul>
+       </li>
+    </ul>
+    </div>
+    
+    <div id="content">
+    <h2>{% block page_title %}Page title{% endblock page_title %}</h2>
+    
+    {% block content %}
+        <p>(stuff goes here)</p>
+    {% endblock content %}
+    </div>
+    
+    <div id="footer">
+    Powered by Vaquera.
+    </div>
+</div>
+</body>
+
+</html>
