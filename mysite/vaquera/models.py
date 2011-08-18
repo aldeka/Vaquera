@@ -1,105 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.forms import ModelForm, Text
+from django.forms import ModelForm
 import datetime
-
-class Project(models.Model):
-    '''Model for the entirety of the project'''
-    name = models.CharField(max_length=200)
-    #milestone_length_choices = (
-        #(7, 'one week'),
-        #(14, 'two weeks'),
-        #(30, 'one month'),
-        #(90, 'three months'),
-    #)
-    ## note: the numbers are only an approximation of the actual length -- still needs processing!
-    #default_milestone_length = models.PositiveIntegerField(choices=milestone_length_choices, default=30)
 
 class Vaquerita(User):
     '''Model for all logged-in users of the bugtracker -- uses Django's built-in user model'''
     is_maintainer = models.BooleanField(default=False)
-
-class Issue(models.Model):
-    '''Model for all bugs and feature requests that the tracker tracks'''
-    title = models.CharField(max_length=200)
-    author = models.ForeignKey('Vaquerita', blank=True, null=True, on_delete=models.SET_NULL)
-    project = models.ForeignKey(Project)
-    priority_choices = (
-        (1, 'critical'),
-        (2, 'urgent'),
-        (3, 'bug'),
-        (4, 'feature'),
-        (5, 'wish'),
-        )
-    # the importance level of the bug
-    priority = models.PositiveIntegerField(choices=priority_choices)
-    status_choices = (
-        ('unr', 'unread'),
-        ('ch', 'chatting'),
-        ('eg', 'needing example'),
-        ('pro', 'in progress'),
-        ('rev', 'needing review'),
-        ('res', 'resolved'),
-        ('def', 'deferred'),
-        ('ro', 'reopened'),
-    )
-    # how far the bug is along towards being closed
-    status = models.CharField(max_length=3, choices=status_choices,default='unr')
-    assignee = models.ForeignKey('Vaquerita', blank=True, null=True)
-    tags = models.ManyToManyField('Tag', blank=True, null=True)
-    followers = models.ManyToManyField('Vaquerita',blank=True,null=True)
-    milestone = models.ForeignKey('Milestone', blank=True, null=True)
-    # for keeping track of dependencies and other relationships between issues -- the exact relation is left to be hashed out in the comments
-    also_see = models.ManyToManyField("self", blank=True, null=True)
     
-    def __unicode__(self):
-        return "Issue" + self.pk
-        
-class IssueForm(ModelForm):
-    class Meta:
-        model = Issue
-        fields = ('title', 'priority', 'status', 'assignee', 'milestone', 'tags', 'followers', 'also_see',)
-        widgets = {
-            'followers': Text,
-            'tags': Text,
-            'also_see': Text,
-        }
-    
-
-class HistoryItem(models.Model):
-    '''Base model for comments and file uploads, and a model in itself for things like issue status changes, priority changes, and other sorts of changes'''
-    issue = models.ForeignKey(Issue)
-    author = models.ForeignKey(Vaquerita, blank=True, null=True, on_delete=models.SET_NULL)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    history_choices = (
-        ('comment','comment'),
-        ('upload', 'file upload'),
-        ('other', 'other change'),
-    )
-    change_type = models.CharField(max_length=8,choices=history_choices)
-    change_description = models.CharField(max_length=200, blank=True, null=True)
-    
-    def __unicode__(self):
-        return 'history item ' + self.pk + ': ' + change_description
-        
-class FileUpload(HistoryItem):
-    '''Subclass of history item for an uploaded file for an issue. Must have one and only one associated issue'''
-    file = models.FileField(upload_to='upload_directory', blank=True, null=True)
-    name = models.CharField(max_length=100)
-    
-class Comment(HistoryItem):
-    '''Subclass of history item for comments on an issue'''
-    change_type = 'comment'
-    content = models.TextField(blank=True,null=True)
-    
-    def __unicode__(self):
-        return 'Comment by ' + self.author.name
-    
-def upload_directory(instance, filename):
-    '''Helper function to create upload directory paths for FileUpload model'''
-    dir = 'issuefiles/'
-    dir = dir + 'issue' + str(instance.issue.pk) + '/'
-
 class Tag(models.Model):
     '''Model for all tags on bugs'''
     name = models.CharField(max_length=100)
@@ -117,10 +24,9 @@ class Milestone(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True,blank=True)
     end_date = models.DateField()
-    project = models.ForeignKey(Project)
     
     @staticmethod
-    def safe_for_democracy(project):
+    def safe_for_democracy():
         # what's today's date?
         today = datetime.date.today()
         # what's the newest date that ought to have a milestone?
@@ -131,7 +37,7 @@ class Milestone(models.Model):
         while latest.end_date < latest_milestone_date:
             # as long as we aren't up-to-date, make a milestone for one month ahead
             new_end_date = generate_enddate(latest.end_date, 1)
-            m = Milestone(end_date=new_end_date, name=default_name(new_end_date), project=project)
+            m = Milestone(end_date=new_end_date, name=default_name(new_end_date))
             m.save()
             # then mark the milestone we just created as the latest milestone
             latest = m
@@ -201,3 +107,79 @@ class Milestone(models.Model):
         '''Returns a boolean that is True if the milestone's completion level is 100 percent and the milestone isn't empty'''
         return self.completion_level == 100.0 and not (self.is_empty and self.is_past)
             
+
+class Issue(models.Model):
+    '''Model for all bugs and feature requests that the tracker tracks'''
+    title = models.CharField(max_length=200)
+    author = models.ForeignKey('Vaquerita', blank=True, null=True, related_name='authored_issue_set', on_delete=models.SET_NULL)
+    priority_choices = (
+        (1, 'critical'),
+        (2, 'urgent'),
+        (3, 'bug'),
+        (4, 'feature'),
+        (5, 'wish'),
+        )
+    # the importance level of the bug
+    priority = models.PositiveIntegerField(choices=priority_choices)
+    status_choices = (
+        (1, 'unread'),
+        (2, 'chatting'),
+        (3, 'needing example'),
+        (4, 'in progress'),
+        (5, 'needing decision'),
+        (6, 'needing review'),
+        (7, 'done'),
+        (8, 'deferred'),
+        (9, 'reopened'),
+    )
+    # how far the bug is along towards being closed
+    status = models.PositiveIntegerField(choices=status_choices,default=1)
+    owner = models.ForeignKey('Vaquerita', blank=True, null=True, related_name='owned_issue_set')
+    tags = models.ManyToManyField('Tag', blank=True, null=True)
+    followers = models.ManyToManyField('Vaquerita',blank=True,null=True, related_name='followed_issue_set')
+    milestone = models.ForeignKey('Milestone', blank=True, null=True)
+    # for keeping track of dependencies and other relationships between issues -- the exact relation is left to be hashed out in the comments
+    also_see = models.ManyToManyField("self", blank=True, null=True)
+    
+    def __unicode__(self):
+        return "Issue" + self.pk
+        
+class IssueForm(ModelForm):
+    class Meta:
+        model = Issue
+        fields = ('title', 'priority', 'status', 'owner', 'milestone', 'tags', 'followers', 'also_see',)
+    
+
+class HistoryItem(models.Model):
+    '''Base model for comments and file uploads, and a model in itself for things like issue status changes, priority changes, and other sorts of changes'''
+    issue = models.ForeignKey(Issue)
+    author = models.ForeignKey(Vaquerita, blank=True, null=True, on_delete=models.SET_NULL)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    history_choices = (
+        ('comment','comment'),
+        ('upload', 'file upload'),
+        ('other', 'other change'),
+    )
+    change_type = models.CharField(max_length=8,choices=history_choices)
+    change_description = models.CharField(max_length=200, blank=True, null=True)
+    
+    def __unicode__(self):
+        return 'history item ' + self.pk + ': ' + change_description
+        
+class FileUpload(HistoryItem):
+    '''Subclass of history item for an uploaded file for an issue. Must have one and only one associated issue'''
+    file = models.FileField(upload_to='upload_directory', blank=True, null=True)
+    name = models.CharField(max_length=100)
+    
+class Comment(HistoryItem):
+    '''Subclass of history item for comments on an issue'''
+    change_type = 'comment'
+    content = models.TextField(blank=True,null=True)
+    
+    def __unicode__(self):
+        return 'Comment by ' + self.author.name
+    
+def upload_directory(instance, filename):
+    '''Helper function to create upload directory paths for FileUpload model'''
+    dir = 'issuefiles/'
+    dir = dir + 'issue' + str(instance.issue.pk) + '/'
