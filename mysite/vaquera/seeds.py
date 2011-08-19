@@ -12,8 +12,27 @@ from vaquera.models import Vaquerita, Milestone, Issue
 random.seed()
 
 tags = ["usability", "bitesize", "design", "ruby", "css", "asynchronous", "super awesome"]
+
+def dice_roll(n):
+    '''Random boolean generator. Returns True about 1/n of the time.'''
+    return random.randint(1,n) == n
     
-class IssueFactory(factory.Factory)
+def get_random_model_instance(Model):
+    total = Model.objects.count()
+    if total > 0:
+        instance = random.randint(1,total)
+        return Model.objects.get(pk=instance)
+    else:
+        return None
+    
+def get_random_model_instance_or_null(Model,n):
+    instance = get_random_model_instance(Model)
+    if dice_roll(n):
+        return None
+    else:
+        return instance
+    
+class IssueFactory(factory.Factory):
     i = Faker()
     name = i.lorem()[:random.randint(40,80)]
     author = get_random_model_instance(Vaquerita)
@@ -42,18 +61,3 @@ def create_fake_data():
     while num_issues > 0:
         issue = IssueFactory()
         num_issues = num_issues - 1
-
-def dice_roll(n):
-    '''Random boolean generator. Returns True about 1/n of the time.'''
-    return random.randint(1,n) == n
-    
-def get_random_model_instance(Model)
-    total = Model.objects.count()
-    return Model.objects.get(pk=random.randint(1,total))
-    
-def get_random_model_instance_or_null(Model,n)
-    instance = get_random_model_instance(Model)
-    if dice_roll(n):
-        return null
-    else:
-        return instance

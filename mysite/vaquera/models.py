@@ -26,35 +26,6 @@ class Milestone(models.Model):
     end_date = models.DateField()
     
     @staticmethod
-    def safe_for_democracy():
-        # what's today's date?
-        today = datetime.date.today()
-        # what's the newest date that ought to have a milestone?
-        latest_milestone_date = generate_enddate(today,3)
-        
-        # check that we're up to date on past milestones
-        latest = Milestone.objects.all().order_by('-end_date')[0]
-        while latest.end_date < latest_milestone_date:
-            # as long as we aren't up-to-date, make a milestone for one month ahead
-            new_end_date = generate_enddate(latest.end_date, 1)
-            m = Milestone(end_date=new_end_date, name=default_name(new_end_date))
-            m.save()
-            # then mark the milestone we just created as the latest milestone
-            latest = m
-        
-    @staticmethod
-    def generate_enddate(date,n):
-        '''adds n months to a given date, and returns the last day of the resulting month'''
-        if (date.month + n) / 12 >= 1:
-            new_month = (date.month + n) % 12
-            new_year = date.year + ((date.month + n) // 12)
-            new_date = datetime.date(new_year, new_month, date.day)
-            return end_of_month(new_date)
-        else:
-            new_date = datetime.date(date.year, date.month + n, date.day)
-            return end_of_month(new_date)
-            
-    @staticmethod
     def is_end_of_month(date):
         # get the date for the next day
         new_date = date + datetime.timedelta(days=1)
@@ -66,7 +37,7 @@ class Milestone(models.Model):
         max_tries = 32
         a_day = datetime.timedelta(days=1)
         while max_tries > 0:
-            if is_end_of_month(date):
+            if Milestone.is_end_of_month(date):
                 return date
             else:
                 date = date + a_day
@@ -77,6 +48,36 @@ class Milestone(models.Model):
     def default_name(date):
         '''Returns a default name for a milestone, based on the month and the year'''
         return str(date.month) + '.' + str(date.year)
+        
+    @staticmethod
+    def generate_enddate(date,n):
+        '''adds n months to a given date, and returns the last day of the resulting month'''
+        if (date.month + n) / 12 >= 1:
+            new_month = (date.month + n) % 12
+            new_year = date.year + ((date.month + n) // 12)
+            new_date = datetime.date(new_year, new_month, 28)
+            return Milestone.end_of_month(new_date)
+        else:
+            new_date = datetime.date(date.year, date.month + n, 28)
+            return Milestone.end_of_month(new_date)
+    
+    @staticmethod
+    def safe_for_democracy():
+        # what's today's date?
+        today = datetime.date.today()
+        # what's the newest date that ought to have a milestone?
+        latest_milestone_date = Milestone.generate_enddate(today,3)
+        
+        # check that we're up to date on past milestones
+        latest = Milestone.objects.all().order_by('-end_date')[0]
+        while latest.end_date < latest_milestone_date:
+            # as long as we aren't up-to-date, make a milestone for one month ahead
+            new_end_date = Milestone.generate_enddate(latest.end_date, 1)
+            generated_name = Milestone.default_name(new_end_date)
+            m = Milestone(end_date=new_end_date, name = generated_name)
+            m.save()
+            # then mark the milestone we just created as the latest milestone
+            latest = m
         
     def is_current(self):
         '''Returns true if this milestone is the current milestone'''
