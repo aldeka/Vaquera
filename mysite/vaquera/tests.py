@@ -22,7 +22,12 @@ class MilestoneTest(TestCase):
     def test_generate_enddate(self):
         self.date = datetime.date(2011,6,1)
         self.other_date = datetime.date(2011,7,31)
+        self.december = datetime.date(2010,11,3)
+        self.frozen_today = datetime.date(2011,8,18)
         
-        self.assertEqual(Milestone.generate_enddate(self.date,1),datetime.date(2011,7,31))
-        self.assertEqual(Milestone.generate_enddate(self.date,14),datetime.date(2012,8,31))
-        self.assertEqual(Milestone.generate_enddate(self.other_date,2),datetime.date(2011,9,30))
+        self.assertEqual(Milestone.generate_enddate(self.date,1), datetime.date(2011,7,31))
+        self.assertEqual(Milestone.generate_enddate(self.date,14), datetime.date(2012,8,31))
+        self.assertEqual(Milestone.generate_enddate(self.date,7), datetime.date(2012,1,31))
+        self.assertEqual(Milestone.generate_enddate(self.other_date,2), datetime.date(2011,9,30))
+        self.assertEqual(Milestone.generate_enddate(self.december,1), datetime.date(2010,12,31))
+        self.assertEqual(Milestone.generate_enddate(self.frozen_today,3), datetime.date(2011,11,30))
