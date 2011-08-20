@@ -2,7 +2,12 @@
 <html>
 <head>
 <title>Vaquera</title>
+
+{% load static %}
+{% get_static_prefix as STATIC_PREFIX %}
+
 {% block stylesheets %}
+<link href="{{ STATIC_PREFIX }}css/style.css" rel="stylesheet" type="text/css" />
 {% endblock stylesheets %}
 
 {% block scripts %}

@@ -7,18 +7,18 @@
     <div id="list-filters">
         <input id="search" type="text"></input>
         <div id="saved-filters">
-            <div class="button all-unassigned">All unassigned</div>
-            <div class="button all-unread">All unread</div>
-            <div class="button all-needs-review">All needing review</div>
-            <div class="button all-overdue">All overdue</div>
+            <div class="button all-unread">Unread</div>
+            <div class="button all-unassigned">Unassigned</div>
+            <div class="button all-needs-review">Needing review</div>
+            <div class="button all-overdue">Overdue</div>
         </div>
-        <a href="{% url views.advanced_search %}">Advanced search</a>
+        <a href="">Advanced search</a>
     </div>
     
     <ul id="issue-list">
     {% for issue in issue_list %}
-        <li class="issue {% if issue.milestone.is_current() %}current{% endif %}{% if issue.milestone.is_past() %}overdue{% endif %}{% if issue.owner == null %}unassigned{% endif %}{% if issue.status == 'unr' %}unread{% endif %}{% if issue.status == 'rev' %}needs-review{% endif %}">
-            <span class="decorator {% if issue.milestone.is_current() %}current{% endif %}{% if issue.milestone.is_past() %}overdue{% endif %}">&nbsp;</span>
+        <li class="issue {% if issue.milestone.is_current %}current{% endif %}{% if issue.milestone.is_past %}overdue{% endif %}{% if issue.owner == null %}unassigned{% endif %}{% if issue.status == 'unr' %}unread{% endif %}{% if issue.status == 'rev' %}needs-review{% endif %}">
+            <span class="decorator {% if issue.milestone.is_current %}current{% endif %}{% if issue.milestone.is_past %}overdue{% endif %}">&nbsp;</span>
             <span class="title">Issue {{ issue.pk }}: {{ issue.title }}</span>
         </li>
     {% endfor %}

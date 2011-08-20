@@ -3,6 +3,8 @@ from vaquera.models import Milestone, Issue, IssueForm, Vaquerita
 import vaquera.settings
 import datetime
 
+project_name = vaquera.settings.project_name
+
 def issue_index(request):
     issue_list = Issue.objects.all()
     return render_to_response('issues/issue-index.html', {'project_name' : project_name, 'issue_list' : issue_list})
@@ -37,19 +39,19 @@ def current_milestone(request):
 
 def milestone(request, milestone_id):
     milestone = get_object_or_404(Milestone, pk=milestone_id)
-    return render_to_response('project_name' : project_name, 'milestones/milestone.html', {'milestone' : milestone})
+    return render_to_response('milestones/milestone.html', {'project_name' : project_name, 'milestone' : milestone})
     
 def issues_authored(request, username):
     vaquerita = Vaquerita.objects.get(username=username)
     issue_list = Issue.objects.filter(author=vaquerita)
-    return render_to_response('project_name' : project_name, 'vaquerita' : vaquerita, 'issue_list' : issue_list})
+    return render_to_response('issues/issue-index.html', {'project_name' : project_name, 'vaquerita' : vaquerita, 'issue_list' : issue_list})
     
 def issues_assigned(request, username):
     vaquerita = Vaquerita.objects.get(username=username)
     issue_list = Issue.objects.filter(owner=vaquerita)
-    return render_to_response('project_name' : project_name, 'vaquerita' : vaquerita, 'issue_list' : issue_list})
+    return render_to_response('issues/issue-index.html', {'project_name' : project_name, 'vaquerita' : vaquerita, 'issue_list' : issue_list})
     
 def issues_followed(request, username):
     vaquerita = Vaquerita.objects.get(username=username)
     issue_list = Issue.objects.filter(followers__contains=vaquerita)
-    return render_to_response('project_name' : project_name, 'vaquerita' : vaquerita, 'issue_list' : issue_list})
+    return render_to_response('issues/issue-index.html', {'project_name' : project_name, 'vaquerita' : vaquerita, 'issue_list' : issue_list})

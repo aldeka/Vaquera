@@ -2,3 +2,5 @@
 *.pyc
 /mysite/userena/*
 *.db
+*.txt
+

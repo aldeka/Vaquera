@@ -31,3 +31,7 @@ class MilestoneTest(TestCase):
         self.assertEqual(Milestone.generate_enddate(self.other_date,2), datetime.date(2011,9,30))
         self.assertEqual(Milestone.generate_enddate(self.december,1), datetime.date(2010,12,31))
         self.assertEqual(Milestone.generate_enddate(self.frozen_today,3), datetime.date(2011,11,30))
+        
+    def test_safe_for_democracy(self):
+        self.today = datetime.date(2011,8,19)
+        Milestone.safe_for_democracy(self.today)

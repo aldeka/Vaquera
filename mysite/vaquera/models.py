@@ -7,9 +7,12 @@ class Vaquerita(User):
     '''Model for all logged-in users of the bugtracker -- uses Django's built-in user model'''
     is_maintainer = models.BooleanField(default=False)
     
+    class Meta:
+        ordering = ['username']
+    
 class Tag(models.Model):
     '''Model for all tags on bugs'''
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     
     def clean(self):
         '''checks if any issue out there is using the tag--if not, it deletes itself'''
@@ -19,11 +22,20 @@ class Tag(models.Model):
     def __unicode__(self):
         return self.name
         
+    class Meta:
+        ordering = ['name']
+        
 class Milestone(models.Model):
     '''Model for milestones -- a group of bugs with a due date, e.g. a sprint or a release'''
     name = models.CharField(max_length=100)
     description = models.TextField(null=True,blank=True)
     end_date = models.DateField()
+    
+    def __unicode__(self):
+        return "Milestone " + self.name
+        
+    class Meta:
+        ordering = ['end_date']
         
     @staticmethod
     def safe_for_democracy(today=None):
@@ -34,21 +46,30 @@ class Milestone(models.Model):
         latest_milestone_date = Milestone.generate_enddate(today,3)
         
         # check that we're up to date on past milestones
-        latest = Milestone.objects.all().order_by('-end_date')[0]
-        while latest.end_date < latest_milestone_date:
+        latest_date = None
+        milestone_list = Milestone.objects.all().order_by('-end_date')
+        if milestone_list == []:
+            latest_date = datetime.date(2011,7,31)
+        else:
+            latest_date = milestone_list[0].end_date
+            
+        while latest_date < latest_milestone_date:
             # as long as we aren't up-to-date, make a milestone for one month ahead
-            new_end_date = Milestone.generate_enddate(latest.end_date, 1)
+            new_end_date = Milestone.generate_enddate(latest_date, 1)
             generated_name = Milestone.default_name(new_end_date)
             m = Milestone(end_date=new_end_date, name = generated_name)
             m.save()
             # then mark the milestone we just created as the latest milestone
-            latest = m
+            latest_date = m.end_date
             
     @staticmethod
     def generate_enddate(date,months_to_add):
         '''adds n months to a given date, and returns the last day of the resulting month'''
         if (date.month + months_to_add) / 12.0 > 1:
             new_month = (date.month + months_to_add) % 12
+            if new_month == 0:
+                # to correct the december bug
+                new_month = 12
             new_year = date.year + ((date.month + months_to_add) // 12)
             new_date = datetime.date(new_year, new_month, 28)
             return Milestone.end_of_month(new_date)
@@ -78,7 +99,7 @@ class Milestone(models.Model):
     @staticmethod
     def default_name(date):
         '''Returns a default name for a milestone, based on the month and the year'''
-        return str(date.month) + '.' + str(date.year)    
+        return str(date.year) + '.' + str(date.month)    
 
     def is_current(self):
         '''Returns true if this milestone is the current milestone'''
@@ -144,7 +165,7 @@ class Issue(models.Model):
     also_see = models.ManyToManyField("self", blank=True, null=True)
     
     def __unicode__(self):
-        return "Issue" + self.pk
+        return "Issue" + str(self.pk)
         
 class IssueForm(ModelForm):
     class Meta:
