@@ -48,7 +48,7 @@ class Milestone(models.Model):
         # check that we're up to date on past milestones
         latest_date = None
         milestone_list = Milestone.objects.all().order_by('-end_date')
-        if milestone_list == []:
+        if not milestone_list:
             latest_date = datetime.date(2011,7,31)
         else:
             latest_date = milestone_list[0].end_date
@@ -167,11 +167,11 @@ class Issue(models.Model):
     def latest_activity(self):
         now = datetime.datetime.now()
         latest_activity_date = now
-        if self.historyitem_set.all() == []:
+        if self.historyitem_set.all():
+            latest_activity_date = self.historyitem_set.order_by('-timestamp')[0].timestamp
+        else:
             # this should never actually get called in a production setup
             latest_activity_date = datetime.datetime(1970,1,1,0,0,0)
-        else:
-            latest_activity_date = self.historyitem_set.order_by('-timestamp')[0].timestamp
         delta = now - latest_activity_date
         if delta < datetime.timedelta(1):
             return "today"

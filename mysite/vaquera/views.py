@@ -3,8 +3,7 @@ from vaquera.models import Milestone, Issue, IssueForm, Vaquerita
 from django.conf import settings
 import datetime
 
-#project_name = vaquera.settings.project_name
-project_name = settings.PROJECT_NAME
+project_name = getattr(settings, 'PROJECT_NAME', 'My Project')
 
 def issue_index(request):
     critical_issues = Issue.objects.filter(priority=1)
