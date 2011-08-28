@@ -151,3 +151,5 @@ LOGGING = {
         },
     }
 }
+
+PROJECT_NAME = "OpenHatch"

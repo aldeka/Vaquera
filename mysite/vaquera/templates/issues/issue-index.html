@@ -5,24 +5,37 @@
 {% block content %}
     <div class="single-column">
     <div id="list-filters">
+        <div id="issue-search">
         Search by issue ID, title, or tag: 
         <input id="search" type="text"></input>
-        <div id="saved-filters">
-            <div class="button all-unread">Unread</div>
-            <div class="button all-unassigned">Unassigned</div>
-            <div class="button all-needs-review">Needing review</div>
-            <div class="button all-overdue">Overdue</div>
         </div>
+        <div id="saved-filters">
+            <div class="button all-unread"><span>Unread</span></div>
+            <div class="button all-unassigned"><span>Unassigned</span></div>
+            <div class="button all-needs-review"><span>Needing review</span></div>
+            <div class="button all-overdue"><span>Overdue</span></div>
+            <a href="">Add custom filter</a>
+        </div>
+        <div id="advanced-search-link">
         <a href="">Advanced search</a>
+        </div>
     </div>
-    
-    <ul id="issue-list">
-    {% for issue in issue_list %}
-        <li class="issue {% if issue.milestone.is_current %}current{% endif %}{% if issue.milestone.is_past %}overdue{% endif %}{% if issue.owner == null %}unassigned{% endif %}{% if issue.status == 'unr' %}unread{% endif %}{% if issue.status == 'rev' %}needs-review{% endif %}">
-            <span class="decorator {% if issue.milestone.is_current %}current{% endif %}{% if issue.milestone.is_past %}overdue{% endif %}">&nbsp;</span>
-            <span class="title">Issue {{ issue.pk }}: {{ issue.title }}</span>
-        </li>
+    <table id="issue-list">
+    <tr class="issue-list-labels"> <td class="decorator"></td> <td class="id">ID</td>  <td class="title">Title</td>  <td class="author">Author</td>  <td class="owner">Owner</td>  <td class="status">Status</td>  <td class="activity">Last activity</td></tr>
+    {% for cat in bugs_by_category %}
+    <tr class="priority-marker"><td colspan="7">{{ cat.category }}</td></tr>
+        {% for issue in cat.issues %}
+            <tr class="issue {% if issue.milestone.is_current %}current{% endif %}{% if issue.milestone.is_past %}overdue{% endif %}{% if issue.owner == null %}unassigned{% endif %}{% if issue.status == 'unr' %}unread{% endif %}{% if issue.status == 'rev' %}needs-review{% endif %}">
+                <td class="decorator {% if issue.milestone.is_current %}current{% endif %}{% if issue.milestone.is_past %}overdue{% endif %}">&nbsp;</td>
+                <td class="id">Issue {{ issue.pk }}:</td>
+                <td class="title">{{ issue.title }}</td>
+                <td class="author">{{ issue.author }}</td>
+                <td class="owner">{% if issue.owner %}{{ issue.owner }}{% else %} {% endif %}</td>
+                <td class="status">{{ issue.get_status_display }}</td>
+                <td class="activity">{{ issue.latest_activity }}</td>
+            </tr>
+        {% endfor %}
     {% endfor %}
-    </ul>
+    </table>
     </div>
 {% endblock content %}

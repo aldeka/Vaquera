@@ -2,7 +2,7 @@ body {
     margin: 0;
     padding: 0;
     background: #efefef;
-    font-size: 12pt;
+    font-size: 11pt;
     color: #333;
     font-family: sans-serif;
     }
@@ -18,7 +18,7 @@ h1,h2,h3 {
     }
     
 #wrapper {
-    width: 1050px;
+    width: 1000px;
     margin: 0 auto;
     background: white;
     padding: 0 10px;
@@ -94,25 +94,72 @@ h1,h2,h3 {
     
 #list-filters {
     background: #eee;
-    padding: 5px;
+    padding: 10px 10px 40px 10px;
+    font-size: .9em;
+    }
+    
+#issue-search {
+    float: left;
+    width: 480px;
+    font-size: 1.3em;
+    }
+    
+#saved-filters {
+    font-weight: bold;
+    margin-left: 480px;
+    padding-top: 5px;
+    }
+    
+#advanced-search-link {
+    clear: left;
+    float: left;
     }
     
 .button {
     background: #fff;
-    padding: 5px 5px;
-    display: block;
+    padding: 8px 8px;
+    display: inline;
     width: 80px;
-    float: left;
     margin-right: 5px;
-    border-radius: 10px;
+    border-radius: 15px;
+    text-align: center;
     }
     
 .button span {
-    margin: 0 auto;
     }
     
 #issue-list {
+    width: 100%;
+    border: none;
+    }
     
+#issue-list .issue-list-labels {
+    font-weight: bold;
+    }
+    
+#issue-list td {
+    padding: 2px 5px;
+    text-align: left;
+    }
+    
+#issue-list .decorator {
+    width: 15px;
+    padding: 2px 0px;
+    }
+    
+#issue-list .id {
+    width: 55px;
+    }
+    
+#issue-list .activity {
+    width: 110px;
+    }
+    
+#issue-list .priority-marker td {
+    text-align: center;
+    padding: 4px 10px;
+    font-weight: bold;
+    background: #eee;
     }
     
 #footer {

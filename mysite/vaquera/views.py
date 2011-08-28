@@ -1,13 +1,21 @@
 from django.shortcuts import render_to_response
 from vaquera.models import Milestone, Issue, IssueForm, Vaquerita
-import vaquera.settings
+from django.conf import settings
 import datetime
 
-project_name = vaquera.settings.project_name
+#project_name = vaquera.settings.project_name
+project_name = settings.PROJECT_NAME
 
 def issue_index(request):
-    issue_list = Issue.objects.all()
-    return render_to_response('issues/issue-index.html', {'project_name' : project_name, 'issue_list' : issue_list})
+    critical_issues = Issue.objects.filter(priority=1)
+    urgent_issues = Issue.objects.filter(priority=2)
+    bug_issues = Issue.objects.filter(priority=3)
+    feature_issues = Issue.objects.filter(priority=4)
+    wish_issues = Issue.objects.filter(priority=5)
+    
+    bugs_by_category = [{"category" : "critical", "issues" : critical_issues}, {"category" : "urgent", "issues" : urgent_issues}, {"category" : "bug", "issues" : bug_issues}, {"category" : "feature", "issues" : feature_issues}, {"category" : "wish", "issues" : wish_issues}]
+    
+    return render_to_response('issues/issue-index.html', {'project_name' : project_name, 'bugs_by_category' : bugs_by_category })
     
 def advanced_search(request):
     issue_list = Issue.objects.all()

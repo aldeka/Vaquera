@@ -164,8 +164,26 @@ class Issue(models.Model):
     # for keeping track of dependencies and other relationships between issues -- the exact relation is left to be hashed out in the comments
     also_see = models.ManyToManyField("self", blank=True, null=True)
     
+    def latest_activity(self):
+        now = datetime.datetime.now()
+        latest_activity_date = now
+        if self.historyitem_set.all() == []:
+            # this should never actually get called in a production setup
+            latest_activity_date = datetime.datetime(1970,1,1,0,0,0)
+        else:
+            latest_activity_date = self.historyitem_set.order_by('-timestamp')[0].timestamp
+        delta = now - latest_activity_date
+        if delta < datetime.timedelta(1):
+            return "today"
+        elif delta < datetime.timedelta(7):
+            return str(delta.days) + " days ago"
+        elif delta < datetime.timedelta(365):
+            return str(delta.days // 7) + " weeks ago"
+        else:
+            return "&infin;"
+    
     def __unicode__(self):
-        return "Issue" + str(self.pk)
+        return "issue" + str(self.pk)
         
 class IssueForm(ModelForm):
     class Meta:
@@ -187,7 +205,10 @@ class HistoryItem(models.Model):
     change_description = models.CharField(max_length=200, blank=True, null=True)
     
     def __unicode__(self):
-        return 'history item ' + self.pk + ': ' + change_description
+        if self.change_description:
+            return self.change_type + ' ' + str(self.pk) + ': ' + change_description
+        else:
+            return self.change_type + ' ' + str(self.pk)
         
 class FileUpload(HistoryItem):
     '''Subclass of history item for an uploaded file for an issue. Must have one and only one associated issue'''
@@ -200,7 +221,7 @@ class Comment(HistoryItem):
     content = models.TextField(blank=True,null=True)
     
     def __unicode__(self):
-        return 'Comment by ' + self.author.name
+        return 'Comment by ' + self.author.username
     
 def upload_directory(instance, filename):
     '''Helper function to create upload directory paths for FileUpload model'''
